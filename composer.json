@@ -1,0 +1,18 @@
+{
+  "name": "zyndpay/zyndpay-php",
+  "description": "Official ZyndPay PHP SDK — accept USDT payments with a few lines of code",
+  "type": "library",
+  "license": "MIT",
+  "keywords": ["zyndpay", "crypto", "usdt", "trc20", "payment-gateway"],
+  "require": {
+    "php": ">=8.0",
+    "ext-json": "*",
+    "ext-curl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "ZyndPay\\": "src/"
+    }
+  },
+  "minimum-stability": "stable"
+}

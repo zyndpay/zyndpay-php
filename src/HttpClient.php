@@ -73,7 +73,7 @@ class HttpClient
             $headers = [
                 'X-Api-Key: ' . $this->apiKey,
                 'Content-Type: application/json',
-                'User-Agent: zyndpay-php/1.0.0',
+                'User-Agent: zyndpay-php/1.1.0',
             ];
 
             if ($idempotencyKey !== null) {

@@ -4,6 +4,7 @@ namespace ZyndPay;
 
 use ZyndPay\Resources\Balances;
 use ZyndPay\Resources\Payins;
+use ZyndPay\Resources\Payouts;
 use ZyndPay\Resources\Transactions;
 use ZyndPay\Resources\Withdrawals;
 
@@ -15,7 +16,13 @@ use ZyndPay\Resources\Withdrawals;
  *
  *   // Create a payin
  *   $payin = $zyndpay->payins->create(['amount' => '100']);
- *   echo $payin['depositAddress']; // Send USDT here
+ *   echo $payin['address']; // Send USDT here
+ *
+ *   // Create a payout
+ *   $payout = $zyndpay->payouts->create([
+ *       'amount' => '50',
+ *       'destinationAddress' => 'T...',
+ *   ]);
  *
  *   // Check balance
  *   $balance = $zyndpay->balances->get();
@@ -26,6 +33,7 @@ use ZyndPay\Resources\Withdrawals;
 class ZyndPay
 {
     public Payins $payins;
+    public Payouts $payouts;
     public Withdrawals $withdrawals;
     public Transactions $transactions;
     public Balances $balances;
@@ -45,6 +53,7 @@ class ZyndPay
         );
 
         $this->payins = new Payins($client);
+        $this->payouts = new Payouts($client);
         $this->withdrawals = new Withdrawals($client);
         $this->transactions = new Transactions($client);
         $this->balances = new Balances($client);

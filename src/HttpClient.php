@@ -10,7 +10,7 @@ use ZyndPay\Exceptions\ZyndPayException;
 
 class HttpClient
 {
-    private const DEFAULT_BASE_URL = 'https://api.zyndpay.com/v1';
+    private const DEFAULT_BASE_URL = 'https://api.zyndpay.io/v1';
     private const DEFAULT_TIMEOUT = 30;
     private const DEFAULT_MAX_RETRIES = 2;
     private const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];

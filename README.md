@@ -50,7 +50,7 @@ echo $balance['available'];  // e.g. "97.00"
 ```php
 $zyndpay = new \ZyndPay\ZyndPay('zyp_live_sk_...', [
     'webhook_secret' => 'whsec_...',              // optional — needed for webhook verification
-    'base_url'       => 'https://api.zyndpay.com/v1', // optional — override for self-hosted
+    'base_url'       => 'https://api.zyndpay.io/v1', // optional — override for self-hosted
     'timeout'        => 30,                        // optional — seconds (default: 30)
     'max_retries'    => 2,                         // optional — retries on network errors (default: 2)
 ]);

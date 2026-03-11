@@ -53,12 +53,12 @@ class Paylinks
      * List paylinks with optional filters.
      *
      * @param array $params Optional: page, limit, status
-     * @return array{data: array, meta: array}
+     * @return array{items: array, total: int}
      */
     public function listAll(array $params = []): array
     {
         $res = $this->client->get('/paylinks', $params);
-        return ['data' => $res['data'], 'meta' => $res['meta'] ?? null];
+        return $res['data'];
     }
 
     /**
@@ -105,21 +105,20 @@ class Paylinks
      *
      * @param string $id Paylink ID
      * @param array $params Optional: page, limit
-     * @return array{data: array, meta: array}
+     * @return array{items: array, total: int}
      */
     public function listOrders(string $id, array $params = []): array
     {
         $res = $this->client->get("/paylinks/{$id}/orders", $params);
-        return ['data' => $res['data'], 'meta' => $res['meta'] ?? null];
+        return $res['data'];
     }
 
     /**
      * Export orders as CSV.
      */
-    public function exportOrdersCsv(string $id)
+    public function exportOrdersCsv(string $id): string
     {
-        $res = $this->client->get("/paylinks/{$id}/orders/export");
-        return $res['data'];
+        return $this->client->getRaw("/paylinks/{$id}/orders/export");
     }
 
     /**
@@ -218,12 +217,12 @@ class Paylinks
      *
      * @param string $id Paylink ID
      * @param array $params Optional: page, limit
-     * @return array{data: array, meta: array}
+     * @return array{items: array, total: int}
      */
     public function listSubscriptions(string $id, array $params = []): array
     {
         $res = $this->client->get("/paylinks/{$id}/subscriptions", $params);
-        return ['data' => $res['data'], 'meta' => $res['meta'] ?? null];
+        return $res['data'];
     }
 
     /**

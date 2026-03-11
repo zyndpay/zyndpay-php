@@ -39,12 +39,12 @@ class BulkPayments
      * List batches with optional filters.
      *
      * @param array $params Optional: page, limit, status
-     * @return array{data: array, meta: array}
+     * @return array{items: array, total: int}
      */
     public function listBatches(array $params = []): array
     {
         $res = $this->client->get('/bulk-payments', $params);
-        return ['data' => $res['data'], 'meta' => $res['meta'] ?? null];
+        return $res['data'];
     }
 
     /**
@@ -113,23 +113,21 @@ class BulkPayments
      * Export batch items as CSV.
      *
      * @param string $batchId Batch ID
-     * @return mixed CSV content
+     * @return string CSV content
      */
-    public function export(string $batchId)
+    public function export(string $batchId): string
     {
-        $res = $this->client->get("/bulk-payments/{$batchId}/export");
-        return $res['data'];
+        return $this->client->getRaw("/bulk-payments/{$batchId}/export");
     }
 
     /**
      * Download template file.
      *
      * @param string $format 'csv' or 'xlsx'
-     * @return mixed Template content
+     * @return string Template content
      */
-    public function downloadTemplate(string $format = 'csv')
+    public function downloadTemplate(string $format = 'csv'): string
     {
-        $res = $this->client->get('/bulk-payments/template', ['format' => $format]);
-        return $res['data'];
+        return $this->client->getRaw('/bulk-payments/template', ['format' => $format]);
     }
 }

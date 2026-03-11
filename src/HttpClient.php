@@ -46,6 +46,51 @@ class HttpClient
         return $this->request('POST', $path, $body, $params, $idempotencyKey);
     }
 
+    /**
+     * Fetch a raw text response (e.g. CSV export, template download).
+     */
+    public function getRaw(string $path, array $params = []): string
+    {
+        $params = array_filter($params, fn($v) => $v !== null);
+        $url = $this->baseUrl . $path;
+        if (!empty($params)) {
+            $url .= '?' . http_build_query($params);
+        }
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $this->timeout,
+            CURLOPT_HTTPHEADER => [
+                'X-Api-Key: ' . $this->apiKey,
+                'User-Agent: zyndpay-php/1.2.1',
+            ],
+            CURLOPT_HEADER => true,
+        ]);
+
+        $response = curl_exec($ch);
+        if ($response === false) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            throw new ZyndPayException('cURL error: ' . $error);
+        }
+
+        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        $responseBody = substr($response, $headerSize);
+        $responseHeaders = substr($response, 0, $headerSize);
+        curl_close($ch);
+
+        if ($statusCode >= 200 && $statusCode < 300) {
+            return $responseBody;
+        }
+
+        $requestId = $this->extractHeader($responseHeaders, 'x-request-id');
+        $parsed = json_decode($responseBody, true) ?: [];
+        throw $this->createError($statusCode, $parsed, $requestId);
+    }
+
     public function patch(string $path, ?array $body = null): array
     {
         return $this->request('PATCH', $path, $body);
@@ -80,7 +125,7 @@ class HttpClient
             CURLOPT_TIMEOUT => $this->timeout,
             CURLOPT_HTTPHEADER => [
                 'X-Api-Key: ' . $this->apiKey,
-                'User-Agent: zyndpay-php/1.2.0',
+                'User-Agent: zyndpay-php/1.2.1',
             ],
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $postFields,
@@ -133,7 +178,7 @@ class HttpClient
             $headers = [
                 'X-Api-Key: ' . $this->apiKey,
                 'Content-Type: application/json',
-                'User-Agent: zyndpay-php/1.2.0',
+                'User-Agent: zyndpay-php/1.2.1',
             ];
 
             if ($idempotencyKey !== null) {

@@ -18,7 +18,7 @@ class Withdrawals
      *
      * @param array $params {
      *   @type string $amount Amount to withdraw in USDT, e.g. "100.00"
-     *   @type string $addressId ID of saved payout address (optional)
+     *   @type string $whitelistAddressId ID of whitelisted address (optional)
      * }
      * @param string|null $idempotencyKey Unique key to prevent duplicates
      * @return array Withdrawal object
@@ -42,12 +42,12 @@ class Withdrawals
      * List withdrawals with optional filters.
      *
      * @param array $params Optional: page, limit, status
-     * @return array{data: array, meta: array}
+     * @return array{items: array, total: int}
      */
     public function list(array $params = []): array
     {
         $res = $this->client->get('/withdrawals', $params);
-        return ['data' => $res['data'], 'meta' => $res['meta'] ?? null];
+        return $res['data'];
     }
 
     /**

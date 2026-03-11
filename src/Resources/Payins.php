@@ -50,12 +50,12 @@ class Payins
      * List payins with optional filters.
      *
      * @param array $params Optional: page, limit, status
-     * @return array{data: array, meta: array}
+     * @return array{items: array, total: int}
      */
     public function list(array $params = []): array
     {
         $res = $this->client->get('/payin', $params);
-        return ['data' => $res['data'], 'meta' => $res['meta'] ?? null];
+        return $res['data'];
     }
 
     /**

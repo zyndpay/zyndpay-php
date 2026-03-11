@@ -21,4 +21,13 @@ class Balances
         $res = $this->client->get('/merchant/balances/USDT_TRC20');
         return $res['data'];
     }
+
+    /**
+     * Get all balances.
+     */
+    public function getAll(): array
+    {
+        $res = $this->client->get('/merchant/balances');
+        return $res['data'];
+    }
 }

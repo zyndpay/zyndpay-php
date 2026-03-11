@@ -46,9 +46,69 @@ class HttpClient
         return $this->request('POST', $path, $body, $params, $idempotencyKey);
     }
 
+    public function patch(string $path, ?array $body = null): array
+    {
+        return $this->request('PATCH', $path, $body);
+    }
+
     public function delete(string $path): array
     {
         return $this->request('DELETE', $path);
+    }
+
+    /**
+     * Upload a file via multipart form data.
+     *
+     * @param string $path API path
+     * @param string $filePath Local file path
+     * @param string $fieldName Form field name (default: 'file')
+     * @return array Parsed response
+     */
+    public function postFile(string $path, string $filePath, string $fieldName = 'file'): array
+    {
+        $url = $this->baseUrl . $path;
+        $ch = curl_init();
+
+        $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
+        $postFields = [
+            $fieldName => new \CURLFile($filePath, $mimeType, basename($filePath)),
+        ];
+
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $this->timeout,
+            CURLOPT_HTTPHEADER => [
+                'X-Api-Key: ' . $this->apiKey,
+                'User-Agent: zyndpay-php/1.2.0',
+            ],
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $postFields,
+            CURLOPT_HEADER => true,
+        ]);
+
+        $response = curl_exec($ch);
+
+        if ($response === false) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            throw new ZyndPayException('cURL error: ' . $error);
+        }
+
+        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        $responseBody = substr($response, $headerSize);
+        $responseHeaders = substr($response, 0, $headerSize);
+        curl_close($ch);
+
+        $requestId = $this->extractHeader($responseHeaders, 'x-request-id');
+
+        if ($statusCode >= 200 && $statusCode < 300) {
+            return json_decode($responseBody, true) ?: [];
+        }
+
+        $parsed = json_decode($responseBody, true) ?: [];
+        throw $this->createError($statusCode, $parsed, $requestId);
     }
 
     private function request(
@@ -73,7 +133,7 @@ class HttpClient
             $headers = [
                 'X-Api-Key: ' . $this->apiKey,
                 'Content-Type: application/json',
-                'User-Agent: zyndpay-php/1.1.0',
+                'User-Agent: zyndpay-php/1.2.0',
             ];
 
             if ($idempotencyKey !== null) {

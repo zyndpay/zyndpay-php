@@ -3,7 +3,9 @@
 namespace ZyndPay;
 
 use ZyndPay\Resources\Balances;
+use ZyndPay\Resources\BulkPayments;
 use ZyndPay\Resources\Payins;
+use ZyndPay\Resources\Paylinks;
 use ZyndPay\Resources\Payouts;
 use ZyndPay\Resources\Transactions;
 use ZyndPay\Resources\Withdrawals;
@@ -34,6 +36,8 @@ class ZyndPay
 {
     public Payins $payins;
     public Payouts $payouts;
+    public Paylinks $paylinks;
+    public BulkPayments $bulkPayments;
     public Withdrawals $withdrawals;
     public Transactions $transactions;
     public Balances $balances;
@@ -54,6 +58,8 @@ class ZyndPay
 
         $this->payins = new Payins($client);
         $this->payouts = new Payouts($client);
+        $this->paylinks = new Paylinks($client);
+        $this->bulkPayments = new BulkPayments($client);
         $this->withdrawals = new Withdrawals($client);
         $this->transactions = new Transactions($client);
         $this->balances = new Balances($client);

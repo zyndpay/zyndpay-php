@@ -64,7 +64,7 @@ class HttpClient
             CURLOPT_TIMEOUT => $this->timeout,
             CURLOPT_HTTPHEADER => [
                 'X-Api-Key: ' . $this->apiKey,
-                'User-Agent: zyndpay-php/1.2.1',
+                'User-Agent: zyndpay-php/1.2.2',
             ],
             CURLOPT_HEADER => true,
         ]);
@@ -125,7 +125,7 @@ class HttpClient
             CURLOPT_TIMEOUT => $this->timeout,
             CURLOPT_HTTPHEADER => [
                 'X-Api-Key: ' . $this->apiKey,
-                'User-Agent: zyndpay-php/1.2.1',
+                'User-Agent: zyndpay-php/1.2.2',
             ],
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $postFields,
@@ -178,7 +178,7 @@ class HttpClient
             $headers = [
                 'X-Api-Key: ' . $this->apiKey,
                 'Content-Type: application/json',
-                'User-Agent: zyndpay-php/1.2.1',
+                'User-Agent: zyndpay-php/1.2.2',
             ];
 
             if ($idempotencyKey !== null) {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ZyndPay\Resources;
 
 use ZyndPay\HttpClient;
@@ -43,5 +45,16 @@ class Transactions
     public function export(array $params = []): string
     {
         return $this->client->getRaw('/transactions/export', $params);
+    }
+
+    /**
+     * Export transactions as PDF.
+     *
+     * @param array $params Optional: type, status, currency, chain, from_date, to_date, since
+     * @return string PDF content
+     */
+    public function exportPdf(array $params = []): string
+    {
+        return $this->client->getRaw('/transactions/export/pdf', $params);
     }
 }

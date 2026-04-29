@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ZyndPay\Resources;
 
 use ZyndPay\HttpClient;
@@ -20,19 +22,31 @@ class BulkPayments
      * @param string|null $idempotencyKey Optional idempotency key
      * @return array Batch object
      */
-    public function createBatch(array $params = [], ?string $idempotencyKey = null): array
+    public function create(array $params = [], ?string $idempotencyKey = null): array
     {
         $res = $this->client->post('/bulk-payments', $params, $idempotencyKey);
         return $res['data'];
     }
 
+    /** @deprecated Use create() instead */
+    public function createBatch(array $params = [], ?string $idempotencyKey = null): array
+    {
+        return $this->create($params, $idempotencyKey);
+    }
+
     /**
      * Get a batch by ID (includes items).
      */
-    public function getBatch(string $id): array
+    public function get(string $id): array
     {
         $res = $this->client->get("/bulk-payments/{$id}");
         return $res['data'];
+    }
+
+    /** @deprecated Use get() instead */
+    public function getBatch(string $id): array
+    {
+        return $this->get($id);
     }
 
     /**
@@ -41,10 +55,16 @@ class BulkPayments
      * @param array $params Optional: page, limit, status
      * @return array{items: array, total: int}
      */
-    public function listBatches(array $params = []): array
+    public function list(array $params = []): array
     {
         $res = $this->client->get('/bulk-payments', $params);
         return $res['data'];
+    }
+
+    /** @deprecated Use list() instead */
+    public function listBatches(array $params = []): array
+    {
+        return $this->list($params);
     }
 
     /**

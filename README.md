@@ -73,9 +73,9 @@ $zyndpay = new \ZyndPay\ZyndPay('zyp_live_sk_...', [
 
 ```php
 $payin = $zyndpay->payins->create([
-    'amount'          => '100',                      // USDT amount (minimum 20)
+    'amount'          => '100',                      // USDT amount (minimum 1)
     'externalRef'     => 'order_9f8e7d',             // your internal order ID (optional)
-    'expiresInSeconds'=> 3600,                       // 1 hour — default is 24h (optional)
+    'expiresInSeconds'=> 3600,                       // 1 hour — default is 30min (optional)
     'metadata'        => ['userId' => 'usr_123'],    // stored as-is (optional)
     'successUrl'      => 'https://yoursite.com/success',
     'cancelUrl'       => 'https://yoursite.com/cancel',
@@ -155,8 +155,8 @@ $withdrawal = $zyndpay->withdrawals->create(
 );
 
 echo $withdrawal['status'];     // "PENDING_REVIEW"
-echo $withdrawal['fee'];        // "2.00" (flat $2 fee)
-echo $withdrawal['netAmount'];  // "48.00"
+echo $withdrawal['fee'];        // "1.50" (1% fee, min $1.50)
+echo $withdrawal['netAmount'];  // "48.50"
 ```
 
 ### Get / list withdrawals
@@ -246,14 +246,19 @@ try {
     exit;
 }
 
-switch ($event['type']) {
+// All payin events include: transactionId, status, currency, chain, externalRef
+switch ($event['event']) {
     case 'payin.confirmed':
-        // credit the order in your system
-        error_log('Payment confirmed: ' . $event['data']['id']);
+        // Also has: amount, amountRequested, txHash, confirmedAt
+        error_log('Payment confirmed: ' . $event['data']['externalRef'] . ' — ' . $event['data']['amount']);
+        break;
+
+    case 'payin.expired':
+        error_log('Payment expired: ' . $event['data']['externalRef']);
         break;
 
     case 'withdrawal.confirmed':
-        error_log('Withdrawal confirmed: ' . $event['data']['id']);
+        error_log('Withdrawal confirmed: ' . $event['data']['transactionId']);
         break;
 }
 
@@ -295,7 +300,7 @@ use ZyndPay\Exceptions\RateLimitException;
 try {
     $payin = $zyndpay->payins->create(['amount' => '5']); // below minimum
 } catch (ValidationException $e) {
-    echo 'Bad request: ' . $e->getMessage();   // "amount must be >= 20"
+    echo 'Bad request: ' . $e->getMessage();   // "amount must be >= 25"
     echo 'Status code: ' . $e->statusCode;     // 400
 } catch (AuthenticationException $e) {
     echo 'Invalid API key';

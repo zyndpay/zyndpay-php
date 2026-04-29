@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ZyndPay;
 
 use ZyndPay\Exceptions\AuthenticationException;
+use ZyndPay\Exceptions\ConflictException;
 use ZyndPay\Exceptions\NotFoundException;
 use ZyndPay\Exceptions\RateLimitException;
 use ZyndPay\Exceptions\ValidationException;
@@ -14,6 +17,7 @@ class HttpClient
     private const DEFAULT_TIMEOUT = 30;
     private const DEFAULT_MAX_RETRIES = 2;
     private const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
+    private const SDK_VERSION = '1.5.0';
 
     private string $apiKey;
     private string $baseUrl;
@@ -64,7 +68,8 @@ class HttpClient
             CURLOPT_TIMEOUT => $this->timeout,
             CURLOPT_HTTPHEADER => [
                 'X-Api-Key: ' . $this->apiKey,
-                'User-Agent: zyndpay-php/1.2.2',
+                'User-Agent: zyndpay-php/' . self::SDK_VERSION,
+                'X-ZyndPay-Api-Version: 2024-01-01',
             ],
             CURLOPT_HEADER => true,
         ]);
@@ -72,7 +77,6 @@ class HttpClient
         $response = curl_exec($ch);
         if ($response === false) {
             $error = curl_error($ch);
-            curl_close($ch);
             throw new ZyndPayException('cURL error: ' . $error);
         }
 
@@ -80,14 +84,17 @@ class HttpClient
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         $responseBody = substr($response, $headerSize);
         $responseHeaders = substr($response, 0, $headerSize);
-        curl_close($ch);
 
         if ($statusCode >= 200 && $statusCode < 300) {
             return $responseBody;
         }
 
         $requestId = $this->extractHeader($responseHeaders, 'x-request-id');
-        $parsed = json_decode($responseBody, true) ?: [];
+        try {
+            $parsed = json_decode($responseBody, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            $parsed = [];
+        }
         throw $this->createError($statusCode, $parsed, $requestId);
     }
 
@@ -125,7 +132,8 @@ class HttpClient
             CURLOPT_TIMEOUT => $this->timeout,
             CURLOPT_HTTPHEADER => [
                 'X-Api-Key: ' . $this->apiKey,
-                'User-Agent: zyndpay-php/1.2.2',
+                'User-Agent: zyndpay-php/' . self::SDK_VERSION,
+                'X-ZyndPay-Api-Version: 2024-01-01',
             ],
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $postFields,
@@ -136,7 +144,6 @@ class HttpClient
 
         if ($response === false) {
             $error = curl_error($ch);
-            curl_close($ch);
             throw new ZyndPayException('cURL error: ' . $error);
         }
 
@@ -144,7 +151,6 @@ class HttpClient
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         $responseBody = substr($response, $headerSize);
         $responseHeaders = substr($response, 0, $headerSize);
-        curl_close($ch);
 
         $requestId = $this->extractHeader($responseHeaders, 'x-request-id');
 
@@ -152,7 +158,11 @@ class HttpClient
             return json_decode($responseBody, true) ?: [];
         }
 
-        $parsed = json_decode($responseBody, true) ?: [];
+        try {
+            $parsed = json_decode($responseBody, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            $parsed = [];
+        }
         throw $this->createError($statusCode, $parsed, $requestId);
     }
 
@@ -178,10 +188,12 @@ class HttpClient
             $headers = [
                 'X-Api-Key: ' . $this->apiKey,
                 'Content-Type: application/json',
-                'User-Agent: zyndpay-php/1.2.2',
+                'User-Agent: zyndpay-php/' . self::SDK_VERSION,
+                'X-ZyndPay-Api-Version: 2024-01-01',
             ];
 
             if ($idempotencyKey !== null) {
+                $idempotencyKey = str_replace(["\r", "\n"], '', $idempotencyKey);
                 $headers[] = 'Idempotency-Key: ' . $idempotencyKey;
             }
 
@@ -202,7 +214,6 @@ class HttpClient
 
             if ($response === false) {
                 $lastError = new ZyndPayException('cURL error: ' . curl_error($ch));
-                curl_close($ch);
                 if ($attempt < $this->maxRetries) {
                     usleep((int)(pow(2, $attempt) * 500000)); // exponential backoff
                 }
@@ -213,7 +224,6 @@ class HttpClient
             $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
             $responseHeaders = substr($response, 0, $headerSize);
             $responseBody = substr($response, $headerSize);
-            curl_close($ch);
 
             $requestId = $this->extractHeader($responseHeaders, 'x-request-id');
 
@@ -249,17 +259,39 @@ class HttpClient
         throw $lastError ?? new ZyndPayException('Request failed after retries');
     }
 
-    private function createError(int $statusCode, array $body, ?string $requestId): ZyndPayException
+    private function createError(int $statusCode, array $body, ?string $requestId = null): ZyndPayException
     {
-        $message = $body['message'] ?? $body['error'] ?? "Request failed with status $statusCode";
+        $errorObj = $body['error'] ?? null;
+        if (is_array($errorObj)) {
+            $message = $errorObj['message'] ?? "Request failed with status $statusCode";
+            $code = $errorObj['code'] ?? null;
+            $details = $errorObj['details'] ?? null;
+        } else {
+            $message = $body['message'] ?? (is_string($errorObj) ? $errorObj : "Request failed with status $statusCode");
+            $code = null;
+            $details = null;
+        }
 
-        return match ($statusCode) {
-            401 => new AuthenticationException($message, $requestId),
-            400 => new ValidationException($message, $requestId),
-            404 => new NotFoundException($message, $requestId),
-            429 => new RateLimitException($message, null, $requestId),
-            default => new ZyndPayException($message, $statusCode, $requestId),
+        return match (true) {
+            $statusCode === 400, $statusCode === 422 => new ValidationException($message, $requestId, $code ?? 'VALIDATION_ERROR', $details),
+            $statusCode === 401 => new AuthenticationException($message, $requestId, $code ?? 'UNAUTHORIZED'),
+            $statusCode === 403 => new AuthenticationException($message, $requestId, $code ?? 'FORBIDDEN'),
+            $statusCode === 404 => new NotFoundException($message, $requestId, $code ?? 'NOT_FOUND'),
+            $statusCode === 409 => new ConflictException($message, $requestId, $code ?? 'CONFLICT'),
+            $statusCode === 429 => new RateLimitException($message, $this->parseRetryAfter($body), $requestId, $code ?? 'RATE_LIMIT_EXCEEDED'),
+            default => new ZyndPayException($message, $statusCode, $requestId, $code),
         };
+    }
+
+    private function parseRetryAfter(array $body): ?int
+    {
+        if (isset($body['retryAfter'])) {
+            return (int) $body['retryAfter'];
+        }
+        if (isset($body['retry_after'])) {
+            return (int) $body['retry_after'];
+        }
+        return null;
     }
 
     private function extractHeader(string $headers, string $name): ?string

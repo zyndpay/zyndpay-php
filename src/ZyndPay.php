@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ZyndPay;
 
 use ZyndPay\Resources\Balances;
 use ZyndPay\Resources\BulkPayments;
+use ZyndPay\Resources\Conversions;
+use ZyndPay\Resources\FiatDestinations;
 use ZyndPay\Resources\Payins;
 use ZyndPay\Resources\Paylinks;
 use ZyndPay\Resources\Payouts;
 use ZyndPay\Resources\Transactions;
+use ZyndPay\Resources\Wallets;
 use ZyndPay\Resources\Withdrawals;
 
 /**
@@ -41,6 +46,9 @@ class ZyndPay
     public Withdrawals $withdrawals;
     public Transactions $transactions;
     public Balances $balances;
+    public Wallets $wallets;
+    public FiatDestinations $fiatDestinations;
+    public Conversions $conversions;
     public WebhookVerifier $webhooks;
 
     /**
@@ -63,6 +71,9 @@ class ZyndPay
         $this->withdrawals = new Withdrawals($client);
         $this->transactions = new Transactions($client);
         $this->balances = new Balances($client);
+        $this->wallets = new Wallets($client);
+        $this->fiatDestinations = new FiatDestinations($client);
+        $this->conversions = new Conversions($client);
         $this->webhooks = new WebhookVerifier($options['webhook_secret'] ?? '');
     }
 }

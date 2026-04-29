@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ZyndPay\Resources;
 
 use ZyndPay\HttpClient;
@@ -17,7 +19,7 @@ class Payouts
      * Initiate a payout.
      *
      * @param array $params {
-     *   @type string $amount Amount in USDT (minimum 20), e.g. "100"
+     *   @type string $amount Amount in USDT (minimum 5), e.g. "100"
      *   @type string $destinationAddress TRON destination address
      *   @type string $currency Currency (default: USDT_TRC20)
      *   @type string $chain Chain (default: TRON)
@@ -51,6 +53,23 @@ class Payouts
     public function list(array $params = []): array
     {
         $res = $this->client->get('/payout', $params);
+        return $res['data'];
+    }
+
+    /**
+     * Estimate payout fees and total cost.
+     *
+     * @param array $params {
+     *   @type string $amount Amount in USDT
+     *   @type string $destinationAddress TRON destination address
+     *   @type string $currency Currency (default: USDT_TRC20)
+     *   @type string $chain Chain (default: TRON)
+     * }
+     * @return array Estimate details (fee, total, etc.)
+     */
+    public function estimate(array $params): array
+    {
+        $res = $this->client->post('/payout/estimate', $params);
         return $res['data'];
     }
 }

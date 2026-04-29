@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ZyndPay\Resources;
 
 use ZyndPay\HttpClient;
@@ -34,9 +36,10 @@ class Paylinks
      * }
      * @return array Paylink object
      */
-    public function create(array $params): array
+    public function create(array $params, bool $sandbox = false): array
     {
-        $res = $this->client->post('/paylinks', $params);
+        $query = $sandbox ? ['sandbox' => 'true'] : [];
+        $res = $this->client->post('/paylinks', $params, null, $query);
         return $res['data'];
     }
 
@@ -55,10 +58,18 @@ class Paylinks
      * @param array $params Optional: page, limit, status
      * @return array{items: array, total: int}
      */
-    public function listAll(array $params = []): array
+    public function list(array $params = []): array
     {
         $res = $this->client->get('/paylinks', $params);
         return $res['data'];
+    }
+
+    /**
+     * @deprecated Use list() instead
+     */
+    public function listAll(array $params = []): array
+    {
+        return $this->list($params);
     }
 
     /**

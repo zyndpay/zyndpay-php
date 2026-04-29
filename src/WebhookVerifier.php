@@ -6,6 +6,37 @@ class WebhookVerifier
 {
     public const HEADER_NAME = 'x-zyndpay-signature';
 
+    // ── Payin events ────────────────────────────────────────────────
+    // All payin events include base fields in data:
+    //   transactionId, status, currency, chain, externalRef
+    //
+    // payin.created:    base + amount, address
+    // payin.confirming: base + txHash, confirmations
+    // payin.confirmed:  base + amount, amountRequested, txHash, confirmedAt
+    // payin.expired:    base fields only
+    public const PAYIN_CREATED    = 'payin.created';
+    public const PAYIN_CONFIRMING = 'payin.confirming';
+    public const PAYIN_CONFIRMED  = 'payin.confirmed';
+    public const PAYIN_EXPIRED    = 'payin.expired';
+    public const PAYIN_FAILED     = 'payin.failed';
+    public const PAYIN_OVERPAID   = 'payin.overpaid';
+    public const PAYIN_UNDERPAID  = 'payin.underpaid';
+
+    // ── Deposit events ──────────────────────────────────────────────
+    public const DEPOSIT_CONFIRMED = 'deposit.confirmed';
+    public const DEPOSIT_OVERPAID  = 'deposit.overpaid';
+    public const DEPOSIT_UNDERPAID = 'deposit.underpaid';
+
+    // ── Payout events ───────────────────────────────────────────────
+    public const PAYOUT_BROADCAST = 'payout.broadcast';
+    public const PAYOUT_CONFIRMED = 'payout.confirmed';
+    public const PAYOUT_FAILED    = 'payout.failed';
+
+    // ── Withdrawal events ───────────────────────────────────────────
+    public const WITHDRAWAL_BROADCAST = 'withdrawal.broadcast';
+    public const WITHDRAWAL_CONFIRMED = 'withdrawal.confirmed';
+    public const WITHDRAWAL_FAILED    = 'withdrawal.failed';
+
     private string $signingSecret;
 
     public function __construct(string $signingSecret)
@@ -24,7 +55,7 @@ class WebhookVerifier
      *
      * Example:
      *   $event = $zyndpay->webhooks->verify($payload, $_SERVER['HTTP_X_ZYNDPAY_SIGNATURE']);
-     *   echo $event['type']; // "payin.confirmed"
+     *   echo $event['event']; // "payin.confirmed"
      */
     public function verify(string $payload, string $signature, int $toleranceSeconds = 300): array
     {

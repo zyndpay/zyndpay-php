@@ -10,7 +10,7 @@ Official ZyndPay PHP SDK — accept USDT TRC20 payments with a few lines of code
 
 ## Requirements
 
-- PHP 8.0+
+- PHP 8.1+
 - `ext-curl` and `ext-json` extensions (enabled by default in most PHP installs)
 - A ZyndPay account and API key
 
@@ -121,6 +121,218 @@ echo $meta['total'] . ' total, ' . $meta['totalPages'] . ' pages';
 | `OVERPAID` | More than expected was sent |
 | `UNDERPAID` | Less than expected was sent |
 | `FAILED` | Processing failed |
+
+---
+
+## Wallets, Conversions, and FCFA Payouts (multi-wallet API)
+
+The multi-wallet API exposes one balance per `(currency, rail)` pair — for example a `USDT_TRC20` wallet plus an `XOF` mobile-money wallet.
+
+```php
+// 1. List wallets
+$wallets = $zyndpay->wallets->list();
+$usdt = array_filter($wallets, fn($w) => $w['currency'] === 'USDT_TRC20')[0];
+$xof  = array_filter($wallets, fn($w) => $w['currency'] === 'XOF')[0];
+
+// 2. Whitelist an FCFA mobile-money destination
+$dest = $zyndpay->fiatDestinations->create([
+    'kind'         => 'MOMO',
+    'label'        => 'My Orange',
+    'momoOperator' => 'ORANGE',
+    'momoPhone'    => '22670000000',
+    'isPrimary'    => true,
+]);
+
+// 3. Convert USDT → XOF (synchronous wallet-to-wallet)
+$zyndpay->conversions->convertBetweenWallets([
+    'fromWalletId' => $usdt['id'],
+    'toWalletId'   => $xof['id'],
+    'fromAmount'   => '100',
+]);
+
+// 4. Pay the FCFA balance out to the whitelisted destination
+$zyndpay->withdrawals->create([
+    'amount'            => '60000',
+    'walletId'          => $xof['id'],
+    'fiatDestinationId' => $dest['id'],
+]);
+```
+
+> The legacy `conversions->create(...)` is deprecated (sunset 2026-07-25). Use the two-step `convertBetweenWallets` + `withdrawals->create` flow above.
+
+---
+
+## Paylinks
+
+Payment links you can share with customers — fixed-price, variable-price, or recurring.
+
+### Create a paylink
+
+```php
+$paylink = $zyndpay->paylinks->create([
+    'title'       => 'Premium Plan',
+    'type'        => 'FIXED',    // 'FIXED' | 'VARIABLE' | 'RECURRING'
+    'amount'      => '25',       // USDT — omit for VARIABLE
+    'currency'    => 'USD',
+    'description' => 'Monthly subscription',
+    'successUrl'  => 'https://yoursite.com/thank-you',
+    'cancelUrl'   => 'https://yoursite.com/cancel',
+]);
+
+echo $paylink['id'];      // "plk_abc123"
+echo $paylink['url'];     // shareable payment URL
+echo $paylink['status'];  // "ACTIVE"
+```
+
+### Get / list / update / delete
+
+```php
+$paylink = $zyndpay->paylinks->get('plk_abc123');
+
+$result = $zyndpay->paylinks->list(['status' => 'ACTIVE', 'page' => 1, 'limit' => 20]);
+foreach ($result['items'] as $pl) {
+    echo $pl['id'] . ': ' . $pl['status'] . PHP_EOL;
+}
+
+$zyndpay->paylinks->update('plk_abc123', ['title' => 'New Title']);
+$zyndpay->paylinks->delete('plk_abc123');
+```
+
+### Stats and orders
+
+```php
+$stats = $zyndpay->paylinks->getStats('plk_abc123');
+echo $stats['totalRevenue'] . ' — ' . $stats['orderCount'] . ' orders';
+
+$dashStats = $zyndpay->paylinks->getDashboardStats();
+
+$orders = $zyndpay->paylinks->listOrders('plk_abc123', ['page' => 1, 'limit' => 50]);
+$csv = $zyndpay->paylinks->exportOrdersCsv('plk_abc123');
+```
+
+### Promo codes
+
+```php
+$promo = $zyndpay->paylinks->createPromoCode('plk_abc123', [
+    'code'          => 'SAVE10',
+    'discountType'  => 'PERCENT',
+    'discountValue' => '10',
+    'maxUses'       => 100,
+]);
+$codes = $zyndpay->paylinks->listPromoCodes('plk_abc123');
+$zyndpay->paylinks->togglePromoCode('plk_abc123', $promo['id'], false);
+$zyndpay->paylinks->deletePromoCode('plk_abc123', $promo['id']);
+```
+
+### Templates
+
+```php
+$tpl = $zyndpay->paylinks->createTemplate(['title' => 'My Template', 'type' => 'FIXED', 'amount' => '50']);
+$zyndpay->paylinks->saveAsTemplate('plk_abc123', 'Saved template');
+$templates = $zyndpay->paylinks->listTemplates();
+$zyndpay->paylinks->deleteTemplate($tpl['id']);
+```
+
+### Subscriptions (recurring paylinks)
+
+```php
+$subs = $zyndpay->paylinks->listSubscriptions('plk_abc123');
+$zyndpay->paylinks->cancelSubscription('plk_abc123', $subs[0]['id']);
+```
+
+---
+
+## Payouts
+
+Send USDT directly to an external wallet address.
+
+### Estimate fees before submitting
+
+```php
+$estimate = $zyndpay->payouts->estimate([
+    'amount'             => '200',
+    'destinationAddress' => 'TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+    'currency'           => 'USDT_TRC20',
+    'chain'              => 'TRON',
+]);
+echo $estimate['fee'];        // network fee in USDT
+echo $estimate['netAmount'];  // amount recipient receives
+```
+
+### Create a payout
+
+```php
+$payout = $zyndpay->payouts->create(
+    [
+        'amount'             => '200',
+        'destinationAddress' => 'TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        'currency'           => 'USDT_TRC20',  // default
+        'chain'              => 'TRON',         // default
+        'externalRef'        => 'payout_order_789',
+        'metadata'           => ['note' => 'vendor payment'],
+    ],
+    'idempotency-key-456' // optional
+);
+echo $payout['status']; // "PENDING" → "BROADCAST" → "CONFIRMED"
+```
+
+### Get / list payouts
+
+```php
+$tx = $zyndpay->payouts->get('payout_id');
+
+$result = $zyndpay->payouts->list(['status' => 'CONFIRMED', 'page' => 1, 'limit' => 50]);
+```
+
+---
+
+## Bulk Payments
+
+Send to hundreds of addresses in a single batch — draft → validate → execute lifecycle.
+
+```php
+// 1. Create a draft batch
+$batch = $zyndpay->bulkPayments->create([], 'idempotency-key');
+
+// 2. Add recipients
+$zyndpay->bulkPayments->addItems($batch['id'], [
+    ['destinationAddress' => 'TXaaa...', 'amount' => '50', 'externalRef' => 'emp_1'],
+    ['destinationAddress' => 'TXbbb...', 'amount' => '75', 'externalRef' => 'emp_2'],
+]);
+
+// Or import from a CSV/XLSX file
+// $zyndpay->bulkPayments->importFile($batch['id'], '/path/to/payroll.csv');
+
+// 3. Validate (checks balance, calculates fees)
+$validated = $zyndpay->bulkPayments->validate($batch['id']);
+echo $validated['totalAmount'] . ' / fee: ' . $validated['totalFee'];
+
+// 4. Execute
+$executed = $zyndpay->bulkPayments->execute($batch['id']);
+echo $executed['status']; // "PROCESSING"
+
+// 5. Monitor
+$detail = $zyndpay->bulkPayments->get($batch['id']);
+// $detail['items'] — per-recipient status
+
+// Retry failed items / cancel
+$zyndpay->bulkPayments->retry($batch['id']);
+$zyndpay->bulkPayments->cancel($batch['id']);
+
+// Export results as CSV
+$csv = $zyndpay->bulkPayments->export($batch['id']);
+```
+
+### Batch statuses
+
+| Status | Description |
+|---|---|
+| `DRAFT` | Building the batch |
+| `VALIDATED` | Fees calculated, ready to execute |
+| `PROCESSING` | Items being broadcast |
+| `COMPLETED` | All items settled |
+| `PARTIALLY_COMPLETED` | Some items failed |
+| `CANCELLED` | Cancelled before execution |
 
 ---
 
@@ -295,6 +507,7 @@ use ZyndPay\Exceptions\ZyndPayException;
 use ZyndPay\Exceptions\AuthenticationException;
 use ZyndPay\Exceptions\ValidationException;
 use ZyndPay\Exceptions\NotFoundException;
+use ZyndPay\Exceptions\ConflictException;
 use ZyndPay\Exceptions\RateLimitException;
 
 try {
@@ -306,6 +519,8 @@ try {
     echo 'Invalid API key';
 } catch (NotFoundException $e) {
     echo 'Resource not found';
+} catch (ConflictException $e) {
+    echo 'Conflict: ' . $e->getMessage();
 } catch (RateLimitException $e) {
     echo 'Rate limited, retry after ' . $e->retryAfter . 's';
 } catch (ZyndPayException $e) {

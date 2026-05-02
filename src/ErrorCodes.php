@@ -29,6 +29,7 @@ final class ErrorCodes
 
     // ─── Merchant / KYB ────────────────────────────────────────────────────
     public const MERCHANT_NOT_FOUND = 'MERCHANT_NOT_FOUND';
+    public const MERCHANT_NOT_LIVE = 'MERCHANT_NOT_LIVE';
     public const MERCHANT_STATUS_INVALID = 'MERCHANT_STATUS_INVALID';
     public const KYB_REQUIRED = 'KYB_REQUIRED';
 
@@ -144,6 +145,15 @@ final class ErrorCodes
     public const PROVIDER_INITIATE_FAILED = 'PROVIDER_INITIATE_FAILED';
     public const PROVIDER_MISSING_URL = 'PROVIDER_MISSING_URL';
     public const FX_UNAVAILABLE = 'FX_UNAVAILABLE';
+
+    // ─── Paylink eligibility engine ───────────────────────────────────────
+    public const PAYLINK_RAIL_DISABLED = 'PAYLINK_RAIL_DISABLED';
+    public const PAYLINK_CURRENCY_UNSUPPORTED = 'PAYLINK_CURRENCY_UNSUPPORTED';
+    public const PAYLINK_AMOUNT_BELOW_MINIMUM = 'PAYLINK_AMOUNT_BELOW_MINIMUM';
+    public const PAYLINK_AMOUNT_ABOVE_MAXIMUM = 'PAYLINK_AMOUNT_ABOVE_MAXIMUM';
+    public const PAYLINK_METHOD_TEMPORARILY_DOWN = 'PAYLINK_METHOD_TEMPORARILY_DOWN';
+    public const PAYLINK_MERCHANT_FEE_INVIABLE = 'PAYLINK_MERCHANT_FEE_INVIABLE';
+    public const PAYLINK_CONVERSION_UNAVAILABLE = 'PAYLINK_CONVERSION_UNAVAILABLE';
 
     // ─── MoMo payin sans redirection ──────────────────────────────────────
     public const OPERATOR_NOT_SUPPORTED = 'OPERATOR_NOT_SUPPORTED';

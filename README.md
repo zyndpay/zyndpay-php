@@ -35,8 +35,8 @@ $zyndpay = new \ZyndPay\ZyndPay('zyp_live_sk_...');
 
 // Create a payment request
 $payin = $zyndpay->payins->create(['amount' => '100']);
-echo $payin['depositAddress'];  // Send USDT TRC20 here
-echo $payin['paymentPageUrl'];  // Redirect your customer here
+echo $payin['address'];      // Send USDT TRC20 here
+echo $payin['paymentUrl'];   // Redirect your customer here
 
 // Check your balance
 $balance = $zyndpay->balances->get();
@@ -81,11 +81,11 @@ $payin = $zyndpay->payins->create([
     'cancelUrl'       => 'https://yoursite.com/cancel',
 ]);
 
-echo $payin['id'];              // "pay_..."
-echo $payin['depositAddress']; // TRC20 address to receive payment
+echo $payin['transactionId'];  // unique payin ID
+echo $payin['address'];        // TRC20 deposit address
+echo $payin['paymentUrl'];     // hosted payment page URL
+echo $payin['qrCodeUrl'];      // QR code data URL
 echo $payin['amount'];         // "100"
-echo $payin['fee'];            // "3.00"
-echo $payin['netAmount'];      // "97.00"
 echo $payin['status'];         // "AWAITING_PAYMENT"
 echo $payin['expiresAt'];      // ISO timestamp
 ```
@@ -108,6 +108,55 @@ foreach ($result['data'] as $payin) {
 $meta = $result['meta'];
 echo $meta['total'] . ' total, ' . $meta['totalPages'] . ' pages';
 ```
+
+### Card payments (Visa / Mastercard)
+
+Redirect the customer to a hosted checkout page. Amount is in fiat (XOF). Fee: **5%**.
+
+```php
+$payin = $zyndpay->payins->create([
+    'amount'        => '65000',     // XOF amount
+    'currency'      => 'XOF',
+    'paymentMethod' => 'CARD',
+    'externalRef'   => 'order_card_123',
+    'successUrl'    => 'https://yoursite.com/success',
+    'cancelUrl'     => 'https://yoursite.com/cancel',
+]);
+
+// Redirect the customer to the hosted checkout
+header('Location: ' . $payin['hostedPaymentUrl']);
+```
+
+### Mobile Money payins (Orange BF / Moov BF)
+
+Amount is in fiat (XOF). The customer stays on your page — no redirect. Fee: **3.5%**.
+
+```php
+$payin = $zyndpay->payins->create([
+    'amount'         => '65000',          // XOF amount
+    'currency'       => 'XOF',
+    'paymentMethod'  => 'MOBILE_MONEY',
+    'customerPhone'  => '+22670000000',   // E.164 format (required)
+    'operatorCode'   => 'ORANGE_BF',      // optional — auto-detected from phone prefix
+    'externalRef'    => 'order_momo_456',
+]);
+
+if ($payin['nextStep'] === 'otp') {
+    // Prompt the customer for the OTP they received by SMS
+    $confirmed = $zyndpay->payins->submitOtp($payin['transactionId'], '123456');
+    echo $confirmed['status']; // "CONFIRMING" → "CONFIRMED"
+} else {
+    // nextStep === 'wait' — display instruction and wait for webhook
+    echo $payin['instruction']; // e.g. "Confirm payment in your Orange Money app"
+}
+```
+
+#### Supported `operatorCode` values
+
+| Code | Network | Country |
+|---|---|---|
+| `ORANGE_BF` | Orange | Burkina Faso |
+| `MOOV_BF` | Moov | Burkina Faso |
 
 ### Payin statuses
 
@@ -227,7 +276,7 @@ $zyndpay->paylinks->deletePromoCode('plk_abc123', $promo['id']);
 ### Templates
 
 ```php
-$tpl = $zyndpay->paylinks->createTemplate(['title' => 'My Template', 'type' => 'FIXED', 'amount' => '50']);
+$tpl = $zyndpay->paylinks->createTemplate(['name' => 'My Template', 'config' => []]);
 $zyndpay->paylinks->saveAsTemplate('plk_abc123', 'Saved template');
 $templates = $zyndpay->paylinks->listTemplates();
 $zyndpay->paylinks->deleteTemplate($tpl['id']);
@@ -350,7 +399,7 @@ $payin = $zyndpay->payins->create([
 ]);
 
 // Instantly simulate confirmation
-$confirmed = $zyndpay->payins->simulate($payin['id']);
+$confirmed = $zyndpay->payins->simulate($payin['transactionId']);
 echo $confirmed['status']; // "CONFIRMED"
 ```
 
@@ -489,12 +538,26 @@ echo json_encode(['received' => true]);
 | `payin.overpaid` | More than expected received |
 | `payin.underpaid` | Less than expected received |
 | `payin.failed` | Processing error |
+| `payout.created` | Payout created |
+| `payout.broadcast` | Sent to blockchain |
+| `payout.confirmed` | On-chain confirmed |
+| `payout.failed` | Processing failed |
 | `withdrawal.requested` | Withdrawal created |
 | `withdrawal.approved` | Approved by admin |
 | `withdrawal.rejected` | Rejected by admin |
 | `withdrawal.broadcast` | Sent to blockchain |
 | `withdrawal.confirmed` | On-chain confirmed |
 | `withdrawal.failed` | Broadcast failed |
+| `merchant.kyb_approved` | KYB review approved |
+| `merchant.kyb_rejected` | KYB review rejected |
+| `merchant.live_activated` | Account activated to live |
+| `merchant.suspended` | Account suspended |
+| `api_key.rotated` | API key rotated |
+| `api_key.revoked` | API key revoked |
+| `balance.low_threshold` | Balance fell below threshold |
+| `bulk_batch.completed` | Bulk batch fully settled |
+| `bulk_batch.partially_completed` | Some bulk items failed |
+| `bulk_batch.failed` | Bulk batch failed |
 
 ---
 

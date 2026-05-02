@@ -74,7 +74,14 @@ class Payins
     }
 
     /**
-     * Simulate payin confirmation (sandbox only).
+     * Simulate payin confirmation (sandbox only). Triggers the
+     * `payin.confirmed` webhook server-side.
+     *
+     * Returns an associative array with keys `message` and
+     * `transactionId` — not a full payin. Call `get($id)` afterwards
+     * to read the post-confirmation status, amount, and txHash.
+     *
+     * @return array{message: string, transactionId: string}
      */
     public function simulate(string $id): array
     {

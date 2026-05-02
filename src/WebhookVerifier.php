@@ -24,6 +24,7 @@ class WebhookVerifier
 
     // ── Deposit events ──────────────────────────────────────────────
     public const DEPOSIT_CONFIRMED = 'deposit.confirmed';
+    public const DEPOSIT_FAILED    = 'deposit.failed';
     public const DEPOSIT_OVERPAID  = 'deposit.overpaid';
     public const DEPOSIT_UNDERPAID = 'deposit.underpaid';
 
@@ -33,9 +34,93 @@ class WebhookVerifier
     public const PAYOUT_FAILED    = 'payout.failed';
 
     // ── Withdrawal events ───────────────────────────────────────────
+    public const WITHDRAWAL_REQUESTED = 'withdrawal.requested';
+    public const WITHDRAWAL_APPROVED  = 'withdrawal.approved';
     public const WITHDRAWAL_BROADCAST = 'withdrawal.broadcast';
     public const WITHDRAWAL_CONFIRMED = 'withdrawal.confirmed';
     public const WITHDRAWAL_FAILED    = 'withdrawal.failed';
+
+    // ── Conversion events ───────────────────────────────────────────
+    public const CONVERSION_CONFIRMED = 'conversion.confirmed';
+    public const CONVERSION_FAILED    = 'conversion.failed';
+
+    // ── Subscription events ─────────────────────────────────────────
+    public const SUBSCRIPTION_CREATED            = 'subscription.created';
+    public const SUBSCRIPTION_RENEWED            = 'subscription.renewed';
+    public const SUBSCRIPTION_RENEWAL_INITIATED  = 'subscription.renewal_initiated';
+    public const SUBSCRIPTION_FAILED             = 'subscription.failed';
+    public const SUBSCRIPTION_CANCELLED          = 'subscription.cancelled';
+    public const SUBSCRIPTION_PAUSED             = 'subscription.paused';
+    public const SUBSCRIPTION_RESUMED            = 'subscription.resumed';
+    public const SUBSCRIPTION_UPDATED            = 'subscription.updated';
+
+    // ── Refund events ───────────────────────────────────────────────
+    public const REFUND_CREATED   = 'refund.created';
+    public const REFUND_APPROVED  = 'refund.approved';
+    public const REFUND_REJECTED  = 'refund.rejected';
+    public const REFUND_COMPLETED = 'refund.completed';
+    public const REFUND_FAILED    = 'refund.failed';
+
+    // ── Dispute events ──────────────────────────────────────────────
+    public const DISPUTE_OPENED    = 'dispute.opened';
+    public const DISPUTE_RESOLVED  = 'dispute.resolved';
+    public const DISPUTE_REJECTED  = 'dispute.rejected';
+    public const DISPUTE_ESCALATED = 'dispute.escalated';
+
+    // ── AML events ──────────────────────────────────────────────────
+    public const AML_FLAGGED = 'aml.flagged';
+
+    // ── Marketplace / split-payment events ──────────────────────────
+    public const SPLITPAYMENT_CREATED = 'splitpayment.created';
+
+    /**
+     * The full set of webhook event names the API delivers. Useful for
+     * subscribing an endpoint to every event or for dropdown population.
+     *
+     * @var string[]
+     */
+    public const ALL_EVENTS = [
+        self::PAYIN_CREATED,
+        self::PAYIN_CONFIRMING,
+        self::PAYIN_CONFIRMED,
+        self::PAYIN_EXPIRED,
+        self::PAYIN_FAILED,
+        self::PAYIN_OVERPAID,
+        self::PAYIN_UNDERPAID,
+        self::DEPOSIT_CONFIRMED,
+        self::DEPOSIT_FAILED,
+        self::DEPOSIT_OVERPAID,
+        self::DEPOSIT_UNDERPAID,
+        self::PAYOUT_BROADCAST,
+        self::PAYOUT_CONFIRMED,
+        self::PAYOUT_FAILED,
+        self::WITHDRAWAL_REQUESTED,
+        self::WITHDRAWAL_APPROVED,
+        self::WITHDRAWAL_BROADCAST,
+        self::WITHDRAWAL_CONFIRMED,
+        self::WITHDRAWAL_FAILED,
+        self::CONVERSION_CONFIRMED,
+        self::CONVERSION_FAILED,
+        self::SUBSCRIPTION_CREATED,
+        self::SUBSCRIPTION_RENEWED,
+        self::SUBSCRIPTION_RENEWAL_INITIATED,
+        self::SUBSCRIPTION_FAILED,
+        self::SUBSCRIPTION_CANCELLED,
+        self::SUBSCRIPTION_PAUSED,
+        self::SUBSCRIPTION_RESUMED,
+        self::SUBSCRIPTION_UPDATED,
+        self::REFUND_CREATED,
+        self::REFUND_APPROVED,
+        self::REFUND_REJECTED,
+        self::REFUND_COMPLETED,
+        self::REFUND_FAILED,
+        self::DISPUTE_OPENED,
+        self::DISPUTE_RESOLVED,
+        self::DISPUTE_REJECTED,
+        self::DISPUTE_ESCALATED,
+        self::AML_FLAGGED,
+        self::SPLITPAYMENT_CREATED,
+    ];
 
     private string $signingSecret;
 

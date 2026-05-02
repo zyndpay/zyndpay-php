@@ -13,6 +13,7 @@ use ZyndPay\Resources\Paylinks;
 use ZyndPay\Resources\Payouts;
 use ZyndPay\Resources\Transactions;
 use ZyndPay\Resources\Wallets;
+use ZyndPay\Resources\WebhookEndpoints;
 use ZyndPay\Resources\Withdrawals;
 
 /**
@@ -50,6 +51,7 @@ class ZyndPay
     public FiatDestinations $fiatDestinations;
     public Conversions $conversions;
     public WebhookVerifier $webhooks;
+    public WebhookEndpoints $webhookEndpoints;
 
     /**
      * @param string $apiKey Your API key (zyp_live_sk_... or zyp_test_sk_...)
@@ -75,5 +77,6 @@ class ZyndPay
         $this->fiatDestinations = new FiatDestinations($client);
         $this->conversions = new Conversions($client);
         $this->webhooks = new WebhookVerifier($options['webhook_secret'] ?? '');
+        $this->webhookEndpoints = new WebhookEndpoints($client);
     }
 }

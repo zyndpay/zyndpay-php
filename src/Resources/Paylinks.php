@@ -141,12 +141,16 @@ class Paylinks
      *   @type string $discountType PERCENT or FIXED
      *   @type string $discountValue Discount value
      *   @type int $maxUses Maximum redemptions
+     *   @type bool $sandbox Pass true when using a test API key — sends ?sandbox=true
      * }
      * @return array Promo code object
      */
     public function createPromoCode(string $id, array $params): array
     {
-        $res = $this->client->post("/paylinks/{$id}/promo-codes", $params);
+        $sandbox = !empty($params['sandbox']);
+        unset($params['sandbox']);
+        $query = $sandbox ? ['sandbox' => 'true'] : [];
+        $res = $this->client->post("/paylinks/{$id}/promo-codes", $params, null, $query);
         return $res['data'];
     }
 
@@ -215,11 +219,18 @@ class Paylinks
      *
      * @param string $id Paylink ID
      * @param string $name Template name
+     * @param bool $sandbox Pass true when using a test API key — sends ?sandbox=true
      * @return array Template object
      */
-    public function saveAsTemplate(string $id, string $name): array
+    public function saveAsTemplate(string $id, string $name, bool $sandbox = false): array
     {
-        $res = $this->client->post("/paylinks/{$id}/save-as-template", ['name' => $name]);
+        $query = $sandbox ? ['sandbox' => 'true'] : [];
+        $res = $this->client->post(
+            "/paylinks/{$id}/save-as-template",
+            ['name' => $name],
+            null,
+            $query,
+        );
         return $res['data'];
     }
 

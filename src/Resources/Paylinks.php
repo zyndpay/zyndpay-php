@@ -141,6 +141,9 @@ class Paylinks
      *   @type string $discountType PERCENT or FIXED
      *   @type string $discountValue Discount value
      *   @type int $maxUses Maximum redemptions
+     *   @type string $expiresAt ISO 8601 timestamp after which the code stops
+     *     working (e.g. "2026-12-31T23:59:59Z"). Omit for no time limit.
+     *     Redeeming an expired code returns ErrorCodes::PROMO_CODE_EXPIRED.
      *   @type bool $sandbox Pass true when using a test API key — sends ?sandbox=true
      * }
      * @return array Promo code object

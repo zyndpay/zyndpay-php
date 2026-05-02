@@ -1,6 +1,6 @@
 {
   "name": "zyndpay/zyndpay-php",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "description": "Official ZyndPay PHP SDK — accept USDT payments with a few lines of code",
   "type": "library",
   "license": "MIT",
